@@ -618,10 +618,6 @@ body {
   transition: opacity 200ms ease;
 }
 
-.kb-row.kb-row-disabled {
-  opacity: 0.32;
-}
-
 .kb-row-space {
   justify-content: center;
 }
@@ -641,7 +637,39 @@ body {
   font-size: 0.8rem;
   line-height: 1;
   backdrop-filter: blur(10px);
-  transition: background 90ms ease, color 90ms ease, border-color 90ms ease, transform 90ms ease, box-shadow 90ms ease;
+  transition: background 90ms ease, color 90ms ease, border-color 90ms ease, transform 90ms ease, box-shadow 90ms ease, opacity 200ms ease;
+}
+
+.kb-key.kb-key-disabled {
+  opacity: 0.32;
+}
+
+/* keys that carry two printable characters (a shifted symbol above
+   the unshifted one, e.g. the number row or punctuation keys) stack
+   them vertically instead of showing a single centered glyph */
+.kb-key.kb-key-dual {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 0.25rem 0.3rem;
+  line-height: 1.05;
+}
+
+.kb-key-shift {
+  font-size: 0.6rem;
+  color: var(--muted);
+  transition: color 90ms ease;
+}
+
+.kb-key-main {
+  font-size: 0.78rem;
+  color: inherit;
+}
+
+.kb-key.active .kb-key-shift,
+.kb-key.active .kb-key-main {
+  color: var(--bg);
 }
 
 .kb-key.kb-wide {

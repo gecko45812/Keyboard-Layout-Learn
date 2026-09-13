@@ -59,8 +59,37 @@
   // physical row, per keyboard language. Most layouts share
   // the same digit row; Programmer Dvorak swaps that row for
   // its unshifted symbol row, its defining feature.
+  //
+  // For every layout, `rows.top/home/bottom` hold only the
+  // 26 letters (split however that layout arranges them),
+  // and `topPunct`/`homePunct`/`bottomPunct` hold whatever
+  // punctuation physically sits alongside each row — including
+  // punctuation that a layout has relocated onto a row that
+  // held a letter on QWERTY (e.g. Colemak and Workman both
+  // shift ';' onto the top row to make room for a letter on
+  // the home row). This split is what lets word generation and
+  // the special-character pool stay row-aware for every layout
+  // without any layout-specific logic elsewhere in the file.
   // ---------------------------------------------------
   const NUMBER_ROW = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+  const NUMBER_ROW_SHIFTED = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')'];
+ 
+  // shifted counterpart for every non-letter character used across
+  // all layouts' topPunct/homePunct/bottomPunct sets — used only to
+  // decide what to print as the small "shifted" glyph on a keyboard
+  // key; it has no effect on word generation.
+  const SYMBOL_SHIFT_MAP = {
+    '[': '{',
+    ']': '}',
+    '\\': '|',
+    ';': ':',
+    "'": '"',
+    ',': '<',
+    '.': '>',
+    '/': '?',
+    '^': '¨',
+    'ù': '%',
+  };
  
   const KEYBOARD_LAYOUTS = {
     qwerty: {
@@ -122,10 +151,97 @@
       homePunct: ['ù'],
       bottomPunct: ['<', ',', ';', ':'],
     },
+    workman: {
+      label: 'WORKMAN',
+      // Workman keeps ';' on the top row (where Colemak also puts
+      // it) so the home row can hold a 10th letter
+      rows: {
+        top: ['q', 'd', 'r', 'w', 'b', 'j', 'f', 'u', 'p'],
+        home: ['a', 's', 'h', 't', 'g', 'y', 'n', 'e', 'o', 'i'],
+        bottom: ['z', 'x', 'm', 'c', 'v', 'k', 'l'],
+      },
+      topPunct: [';', '[', ']'],
+      homePunct: ["'"],
+      bottomPunct: [',', '.', '/'],
+    },
+    graphite: {
+      label: 'GRAPHITE',
+      // Graphite relocates the apostrophe onto the top row (the
+      // QWERTY Y position) to free up a full 10-letter home row
+      rows: {
+        top: ['b', 'l', 'd', 'w', 'z', 'f', 'o', 'u', 'j'],
+        home: ['n', 'r', 't', 's', 'g', 'y', 'h', 'a', 'e', 'i'],
+        bottom: ['q', 'x', 'm', 'c', 'v', 'k', 'p'],
+      },
+      topPunct: ["'", '[', ']'],
+      homePunct: [],
+      bottomPunct: [',', '.', '/'],
+    },
+    semimak: {
+      label: 'SEMIMAK',
+      // Semimak keeps a full 10-letter top and home row, pushing the
+      // apostrophe down onto the bottom row alongside the usual
+      // comma/period/slash punctuation, leaving only 6 bottom letters
+      rows: {
+        top: ['f', 'l', 'h', 'v', 'z', 'q', 'w', 'u', 'o', 'y'],
+        home: ['s', 'r', 'n', 't', 'k', 'c', 'd', 'e', 'a', 'i'],
+        bottom: ['x', 'b', 'm', 'j', 'p', 'g'],
+      },
+      topPunct: ['[', ']'],
+      homePunct: [';'],
+      bottomPunct: ["'", ',', '.', '/'],
+    },
+    canary: {
+      label: 'CANARY',
+      // Canary moves the apostrophe onto the top row (freeing a full
+      // 10-letter home row) and folds ';' in with the bottom row
+      rows: {
+        top: ['w', 'l', 'y', 'p', 'b', 'z', 'f', 'o', 'u'],
+        home: ['c', 'r', 's', 't', 'g', 'm', 'n', 'e', 'i', 'a'],
+        bottom: ['q', 'j', 'v', 'd', 'k', 'x', 'h'],
+      },
+      topPunct: ["'", '[', ']'],
+      homePunct: [],
+      bottomPunct: [',', '.', '/', ';'],
+    },
+    asset: {
+      label: 'ASSET',
+      // Asset stays close to QWERTY punctuation-wise, moving only
+      // ';' up to the top row so the home row can carry 10 letters
+      rows: {
+        top: ['q', 'w', 'j', 'f', 'g', 'y', 'p', 'u', 'l'],
+        home: ['a', 's', 'e', 't', 'd', 'h', 'n', 'i', 'o', 'r'],
+        bottom: ['z', 'x', 'c', 'v', 'b', 'k', 'm'],
+      },
+      topPunct: [';', '[', ']'],
+      homePunct: ["'"],
+      bottomPunct: [',', '.', '/'],
+    },
+    halmak: {
+      label: 'HALMAK',
+      // Halmak is the layout that first pushed comma/period into
+      // the home row's center columns instead of the bottom row
+      rows: {
+        top: ['w', 'l', 'r', 'b', 'z', 'q', 'u', 'd', 'j'],
+        home: ['s', 'h', 'n', 't', 'a', 'e', 'o', 'i'],
+        bottom: ['f', 'm', 'v', 'c', 'g', 'p', 'x', 'k', 'y'],
+      },
+      topPunct: [';', '[', ']'],
+      homePunct: [',', '.', "'"],
+      bottomPunct: ['/'],
+    },
   };
  
   function numberRowFor(layout) {
     return layout.numberRow || NUMBER_ROW;
+  }
+ 
+  function numberRowShiftedFor(layout) {
+    // a layout with a custom (symbol) number row — such as Programmer
+    // Dvorak — already holds the "shifted" symbols as its base row,
+    // so the plain digits become the shown counterpart instead
+    if (layout.numberRow) return NUMBER_ROW;
+    return NUMBER_ROW_SHIFTED;
   }
  
   // ---------------------------------------------------
@@ -149,6 +265,11 @@
     return letters;
   }
  
+  // the number row's special characters are available whenever the
+  // special-characters toggle is on, regardless of which letter rows
+  // are enabled — only the punctuation that lives on the top/home/
+  // bottom rows is gated by that row's own toggle, since it's
+  // physically part of that row.
   function computeSpecialPool() {
     const layout = currentLayoutData();
     const pool = [...numberRowFor(layout)];
@@ -712,26 +833,61 @@
   // ---------------------------------------------------
   // keyboard visual — mirrors the selected layout and the
   // rows currently enabled for word generation, and lights
-  // up keys as they're pressed.
+  // up keys as they're pressed. Number-row and punctuation
+  // keys that carry a shifted symbol (e.g. '1'/'!' or '['/'{')
+  // show both characters, stacked, the way a physical
+  // keycap would.
   // ---------------------------------------------------
+  function createKeyElement(mainChar, shiftChar) {
+    const keyEl = document.createElement('div');
+    keyEl.className = 'kb-key';
+    keyEl.dataset.key = mainChar;
+ 
+    if (shiftChar) {
+      keyEl.classList.add('kb-key-dual');
+ 
+      const shiftSpan = document.createElement('span');
+      shiftSpan.className = 'kb-key-shift';
+      shiftSpan.textContent = shiftChar;
+ 
+      const mainSpan = document.createElement('span');
+      mainSpan.className = 'kb-key-main';
+      mainSpan.textContent = mainChar;
+ 
+      keyEl.appendChild(shiftSpan);
+      keyEl.appendChild(mainSpan);
+    } else {
+      keyEl.textContent = mainChar;
+    }
+ 
+    return keyEl;
+  }
+ 
+  // letters never show a second character here — only the
+  // punctuation/number keys that actually carry two symbols do
+  function shiftedSymbolFor(ch) {
+    if (/^[a-z]$/.test(ch)) return null;
+    return SYMBOL_SHIFT_MAP[ch] || null;
+  }
+ 
   function buildKeyboardVisual() {
     const layout = currentLayoutData();
     keyboardVisualEl.innerHTML = '';
  
     const numberRowEl = document.createElement('div');
     numberRowEl.className = 'kb-row';
-    if (!specialChars) {
+    const numberKeys = numberRowFor(layout);
+    const numberShiftKeys = numberRowShiftedFor(layout);
+    numberKeys.forEach((k, i) => {
+      const keyEl = createKeyElement(k, numberShiftKeys[i] || null);
       // digits/symbols on this row only ever appear when the special
-      // characters toggle is on, so dim it in step with that setting
-      numberRowEl.classList.add('kb-row-disabled');
-    }
-    numberRowFor(layout).forEach((k) => {
-      const keyEl = document.createElement('div');
-      keyEl.className = 'kb-key';
-      keyEl.dataset.key = k;
-      keyEl.textContent = k;
+      // characters toggle is on, so dim them in step with that setting
+      if (!specialChars) keyEl.classList.add('kb-key-disabled');
       numberRowEl.appendChild(keyEl);
     });
+    // backspace works no matter what's enabled for word generation, so
+    // it's never dimmed — deliberately added after the loop above,
+    // untouched by the specialChars check
     const backKey = document.createElement('div');
     backKey.className = 'kb-key kb-backspace';
     backKey.dataset.code = 'Backspace';
@@ -740,22 +896,31 @@
     keyboardVisualEl.appendChild(numberRowEl);
  
     const letterRowDefs = [
-      { keys: [...layout.rows.top, ...layout.topPunct], rowName: 'top' },
-      { keys: [...layout.rows.home, ...layout.homePunct], rowName: 'home' },
-      { keys: [...layout.rows.bottom, ...layout.bottomPunct], rowName: 'bottom' },
+      { letters: layout.rows.top, punct: layout.topPunct, rowName: 'top' },
+      { letters: layout.rows.home, punct: layout.homePunct, rowName: 'home' },
+      { letters: layout.rows.bottom, punct: layout.bottomPunct, rowName: 'bottom' },
     ];
  
     letterRowDefs.forEach((rowDef) => {
       const rowEl = document.createElement('div');
       rowEl.className = 'kb-row';
-      if (!rowChecked[rowDef.rowName]) {
-        rowEl.classList.add('kb-row-disabled');
-      }
-      rowDef.keys.forEach((k) => {
-        const keyEl = document.createElement('div');
-        keyEl.className = 'kb-key';
-        keyEl.dataset.key = k;
-        keyEl.textContent = k;
+      // letters are gated only by whether their row is enabled — they
+      // can appear in the passage any time that row contributes to
+      // computeAllowedLetters(), regardless of the special-characters
+      // setting.
+      const rowEnabled = rowChecked[rowDef.rowName];
+      rowDef.letters.forEach((k) => {
+        const keyEl = createKeyElement(k, null);
+        if (!rowEnabled) keyEl.classList.add('kb-key-disabled');
+        rowEl.appendChild(keyEl);
+      });
+      // punctuation on a letter row only ever shows up in the passage
+      // when BOTH that row is enabled AND special characters is on
+      // (see computeSpecialPool) — so its dim state has to track both,
+      // independently of the plain letters sitting right next to it.
+      rowDef.punct.forEach((p) => {
+        const keyEl = createKeyElement(p, shiftedSymbolFor(p));
+        if (!rowEnabled || !specialChars) keyEl.classList.add('kb-key-disabled');
         rowEl.appendChild(keyEl);
       });
       keyboardVisualEl.appendChild(rowEl);
