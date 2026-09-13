@@ -1,14 +1,221 @@
-<html>
- <head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Multitype — a typing speed test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&family=Roboto+Mono:wght@400;700&family=Fira+Code:wght@400;700&family=Source+Code+Pro:wght@400;700&family=IBM+Plex+Mono:wght@400;700&family=Space+Mono:wght@400;700&family=Inconsolata:wght@400;700&family=Courier+Prime:wght@400;700&family=Roboto:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" id="favicon" type="image/png" href="">
+</head>
+<body data-theme="blue">
 
-   <title>Keyboard Layout Learning</title>
-   
- </head> 
+<div class="app">
 
-<body>
+  <header class="topbar">
+    <h1 class="logo">Multi<span class="logo-accent">type</span></h1>
 
-  <p>Poop</p>
-  
+    <div class="topbar-right">
+      <div class="stats" id="statsRow">
+        <div class="stat">
+          <span class="stat-value" id="statTime">0s</span>
+          <span class="stat-label">time</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="statWpm">0</span>
+          <span class="stat-label">wpm</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="statAcc">100%</span>
+          <span class="stat-label">accuracy</span>
+        </div>
+      </div>
+
+      <div class="settings-wrap">
+        <button class="icon-btn" id="settingsBtn" type="button" aria-label="settings" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+          </svg>
+        </button>
+
+        <div class="settings-panel" id="settingsPanel" hidden>
+          <div class="settings-row">
+            <label for="themeSelect">theme</label>
+            <select id="themeSelect">
+              <option value="red">red</option>
+              <option value="orange">orange</option>
+              <option value="yellow">yellow</option>
+              <option value="green">green</option>
+              <option value="blue" selected>blue</option>
+              <option value="purple">purple</option>
+              <option value="black">black</option>
+              <option value="white">white</option>
+            </select>
+          </div>
+
+          <div class="settings-row">
+            <label for="forgiveToggle">forgive mistakes</label>
+            <label class="switch">
+              <input type="checkbox" id="forgiveToggle" checked />
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+            </label>
+          </div>
+
+          <div class="settings-row">
+            <label for="effectsToggle">keystroke effects</label>
+            <label class="switch">
+              <input type="checkbox" id="effectsToggle" checked />
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+            </label>
+          </div>
+
+          <div class="settings-row">
+            <label for="fontSelect">font</label>
+            <select id="fontSelect">
+              <option value="'JetBrains Mono', monospace" selected>JetBrains Mono</option>
+              <option value="'Roboto Mono', monospace">Roboto Mono</option>
+              <option value="'Fira Code', monospace">Fira Code</option>
+              <option value="'Source Code Pro', monospace">Source Code Pro</option>
+              <option value="'IBM Plex Mono', monospace">IBM Plex Mono</option>
+              <option value="'Space Mono', monospace">Space Mono</option>
+              <option value="'Inconsolata', monospace">Inconsolata</option>
+              <option value="'Courier Prime', monospace">Courier Prime</option>
+              <option value="'Roboto', sans-serif">Roboto</option>
+              <option value="'Lato', sans-serif">Lato</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="progress-track" id="progressTrack">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <main class="stage" id="stage">
+    <div class="stage-toolbar">
+      <button class="btn btn-ghost" id="restartBtn">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+          <polyline points="21 3 21 9 15 9" />
+        </svg>
+        restart
+      </button>
+
+      <div class="words-wrap">
+        <button class="btn btn-ghost" id="wordsBtn" type="button" aria-haspopup="true" aria-expanded="false">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="6" width="20" height="12" rx="2" />
+            <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h12" />
+          </svg>
+          words
+        </button>
+
+        <div class="settings-panel words-panel" id="wordsPanel" hidden>
+          <div class="settings-row">
+            <label for="layoutSelect">layout</label>
+            <select id="layoutSelect">
+              <option value="qwerty" selected>QWERTY</option>
+              <option value="colemak">COLEMAK</option>
+              <option value="dvorak">DVORAK</option>
+              <option value="progdvorak">PROG. DVORAK</option>
+              <option value="azerty">AZERTY</option>
+            </select>
+          </div>
+
+          <div class="settings-divider"></div>
+
+          <div class="settings-row">
+            <label for="wordCountInput">word count</label>
+            <input type="number" id="wordCountInput" class="word-count-input" min="10" max="1000" step="1" value="45" />
+          </div>
+
+          <div class="settings-divider"></div>
+
+          <div class="settings-row">
+            <label for="rowTop">top row</label>
+            <label class="switch">
+              <input type="checkbox" id="rowTop" checked />
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+            </label>
+          </div>
+
+          <div class="settings-row">
+            <label for="rowHome">home row</label>
+            <label class="switch">
+              <input type="checkbox" id="rowHome" checked />
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+            </label>
+          </div>
+
+          <div class="settings-row">
+            <label for="rowBottom">bottom row</label>
+            <label class="switch">
+              <input type="checkbox" id="rowBottom" checked />
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+            </label>
+          </div>
+
+          <div class="settings-divider"></div>
+
+          <div class="settings-row">
+            <label for="specialToggle">special characters</label>
+            <label class="switch">
+              <input type="checkbox" id="specialToggle" />
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="type-panel">
+      <div class="passage-viewport" id="passageViewport">
+        <div class="passage-inner" id="passageInner">
+          <!-- word/char spans injected by script.js -->
+          <div class="caret" id="caret"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="keyboard-visual" id="keyboardVisual" aria-hidden="true">
+      <!-- keyboard rows injected by script.js -->
+    </div>
+  </main>
+
+  <section class="results" id="results" hidden>
+    <div class="result-primary">
+      <span class="result-number" id="resultWpm">0</span>
+      <span class="result-unit">wpm</span>
+    </div>
+    <div class="result-secondary">
+      <div class="result-item">
+        <span class="result-item-value" id="resultAcc">100%</span>
+        <span class="result-item-label">accuracy</span>
+      </div>
+      <div class="result-item">
+        <span class="result-item-value" id="resultTime">0s</span>
+        <span class="result-item-label">time</span>
+      </div>
+      <div class="result-item">
+        <span class="result-item-value" id="resultChars">0/0</span>
+        <span class="result-item-label">correct characters</span>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="restartFromResults">try again</button>
+  </section>
+
+  <footer class="footer">
+    <span class="footer-note">esc restarts · click the text to focus</span>
+  </footer>
+
+  <input type="text" id="hiddenInput" class="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="typing input" />
+
+</div>
+
+<script src="script.js"></script>
 </body>
-  
 </html>
