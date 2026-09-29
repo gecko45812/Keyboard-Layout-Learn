@@ -1100,10 +1100,50 @@
  
   hiddenInput.addEventListener('input', handleInput);
   hiddenInput.addEventListener('paste', (e) => e.preventDefault());
+
+  // keys that would move the text cursor or select text inside the
+  // hidden input. The caret must always stay at the end of what has
+  // been typed, so every one of these is swallowed (with or without
+  // Shift/Ctrl/Alt held down).
+  const CURSOR_KEYS = new Set([
+    'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+    'Home', 'End', 'PageUp', 'PageDown',
+  ]);
+
   hiddenInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Backspace' && hiddenInput.value.length <= minAllowedLength) {
+    const key = e.key || '';
+
+    if (CURSOR_KEYS.has(key)) {
+      e.preventDefault();
+      return;
+    }
+
+    // select-all would let the next keystroke overwrite everything
+    // typed so far
+    if ((e.ctrlKey || e.metaKey) && key.toLowerCase() === 'a') {
+      e.preventDefault();
+      return;
+    }
+
+    if (key === 'Backspace' && hiddenInput.value.length <= minAllowedLength) {
       e.preventDefault();
     }
+  });
+
+  // safety net for anything the keydown filter can't see — for example
+  // the iOS hold-spacebar-to-move-cursor gesture: if the caret or a
+  // selection ever ends up anywhere but the very end, snap it back
+  function keepCaretAtEnd() {
+    const end = hiddenInput.value.length;
+    if (hiddenInput.selectionStart !== end || hiddenInput.selectionEnd !== end) {
+      hiddenInput.setSelectionRange(end, end);
+    }
+  }
+
+  hiddenInput.addEventListener('select', keepCaretAtEnd);
+  hiddenInput.addEventListener('focus', keepCaretAtEnd);
+  document.addEventListener('selectionchange', () => {
+    if (document.activeElement === hiddenInput) keepCaretAtEnd();
   });
  
   restartBtn.addEventListener('click', () => {

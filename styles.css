@@ -154,7 +154,12 @@ body[data-theme="white"] {
    rule, or JS toggling `.hidden` silently does nothing */
 [hidden] { display: none !important; }
 
-html, body { height: 100%; }
+/* stops mobile browsers (iOS in landscape especially) from
+   inflating text sizes on their own */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 
 body {
   margin: 0;
@@ -169,6 +174,7 @@ body {
 
 .app {
   min-height: 100vh;
+  min-height: 100dvh; /* accounts for mobile browser toolbars */
   display: flex;
   flex-direction: column;
   max-width: 1040px;
@@ -179,6 +185,9 @@ body {
 /* ---------------- topbar ---------------- */
 
 .topbar {
+  /* positioned so that on small screens the settings panel can
+     anchor to this full-width bar instead of the small gear button */
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -426,6 +435,9 @@ body {
 }
 
 .stage-toolbar {
+  /* positioned so that on small screens the words panel can anchor
+     to this full-width bar instead of the small "words" button */
+  position: relative;
   width: 100%;
   max-width: 900px;
   display: flex;
@@ -592,12 +604,15 @@ body {
 .hidden-input {
   position: fixed;
   top: 0;
-  left: -1000px;
+  left: 0;
   width: 1px;
   height: 1px;
+  padding: 0;
   opacity: 0;
   border: none;
   background: transparent;
+  font-size: 16px;      /* stops iOS Safari from zooming in on focus */
+  pointer-events: none; /* never receives taps/clicks itself; focus is set from script.js */
 }
 
 /* ---------------- keyboard visual ---------------- */
@@ -614,6 +629,8 @@ body {
 
 .kb-row {
   display: flex;
+  flex-wrap: wrap;       /* safety net for narrow widths */
+  justify-content: center;
   gap: 0.4rem;
   transition: opacity 200ms ease;
 }
@@ -835,6 +852,16 @@ body {
   color: var(--muted);
 }
 
+/* ---------------- Safari backdrop-filter prefixes ---------------- */
+
+.stat,
+.icon-btn,
+.btn-ghost { -webkit-backdrop-filter: blur(16px); }
+
+.type-panel { -webkit-backdrop-filter: blur(20px); }
+
+.kb-key { -webkit-backdrop-filter: blur(10px); }
+
 /* ---------------- responsive ---------------- */
 
 @media (max-width: 640px) {
@@ -850,9 +877,20 @@ body {
     justify-content: center;
   }
 
-  .settings-panel {
-    right: 50%;
-    transform: translateX(50%);
+  /* anchor panels to the full-width bar (not the small button) so
+     they can never hang off the edge of the screen */
+  .settings-wrap,
+  .words-wrap {
+    position: static;
+  }
+
+  .settings-panel,
+  .words-panel {
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: 340px;
+    margin: 0 auto;
   }
 
   .type-panel {
@@ -860,10 +898,37 @@ body {
     border-radius: 16px;
   }
 
-  .result-secondary { gap: 0; }
+  /* keeps the longest words from overflowing on ~320px screens */
+  .passage-inner {
+    font-size: clamp(1.1rem, 5.2vw, 1.5rem);
+  }
+
+  .result-secondary {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem 0;
+  }
+
   .result-item { padding: 0 0.9rem; }
 
   .footer { flex-direction: column; gap: 0.6rem; }
+}
+
+/* touch devices (phones and tablets) */
+@media (pointer: coarse) {
+  /* iOS zooms into any field with text smaller than 16px on focus */
+  .settings-row select,
+  .settings-row input[type="number"] {
+    font-size: 16px;
+  }
+
+  /* no physical keys to mirror */
+  .keyboard-visual { display: none; }
+}
+
+/* devices without hover have no Esc key either */
+@media (hover: none) {
+  .hint-keyboard { display: none; }
 }
 
 /* ---------------- reduced motion ---------------- */
