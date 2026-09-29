@@ -172,14 +172,18 @@ body {
   transition: background 200ms ease, color 200ms ease;
 }
 
+/* the app scales with the window: it takes most of the width on
+   any screen, but is capped (and padded) so there is always
+   breathing room around it on large displays */
 .app {
   min-height: 100vh;
   min-height: 100dvh; /* accounts for mobile browser toolbars */
   display: flex;
   flex-direction: column;
-  max-width: 1040px;
+  width: 100%;
+  max-width: 1360px;
   margin: 0 auto;
-  padding: 2.75rem 1.75rem 2.25rem;
+  padding: clamp(1.75rem, 5vh, 3.25rem) clamp(1.25rem, 4vw, 3.5rem) clamp(1.5rem, 4vh, 2.5rem);
 }
 
 /* ---------------- topbar ---------------- */
@@ -410,7 +414,7 @@ body {
   height: 3px;
   background: var(--line);
   border-radius: 3px;
-  margin: 1.75rem 0 0;
+  margin: clamp(1.25rem, 3vh, 1.75rem) 0 0;
   overflow: hidden;
   transition: opacity 200ms ease;
 }
@@ -431,7 +435,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 2rem 0 2.5rem;
+  padding: clamp(1.25rem, 4vh, 2.5rem) 0 clamp(1.5rem, 4vh, 2.5rem);
 }
 
 .stage-toolbar {
@@ -439,7 +443,6 @@ body {
      to this full-width bar instead of the small "words" button */
   position: relative;
   width: 100%;
-  max-width: 900px;
   display: flex;
   justify-content: space-between;
   margin-bottom: 1rem;
@@ -463,11 +466,10 @@ body {
 
 .type-panel {
   width: 100%;
-  max-width: 900px;
   background: var(--surface);
   border: 1px solid var(--line-soft);
-  border-radius: 20px;
-  padding: 2.5rem 2.75rem;
+  border-radius: 22px;
+  padding: clamp(1.75rem, 4.5vh, 3rem) clamp(1.5rem, 4vw, 3.5rem);
   backdrop-filter: blur(20px);
   box-shadow:
     0 30px 60px -30px rgba(0, 0, 0, 0.55),
@@ -484,7 +486,7 @@ body {
   will-change: transform;
   transition: transform 180ms ease;
   font-family: var(--font-mono);
-  font-size: clamp(1.5rem, 2.6vw, 2.15rem);
+  font-size: clamp(1.5rem, 2.9vw, 2.7rem);
   line-height: 1.95;
   letter-spacing: 0.01em;
 }
@@ -582,7 +584,8 @@ body {
   top: 0;
   left: 0;
   width: 2.5px;
-  height: 1.5rem;
+  /* sized in em so the caret scales with the passage font size */
+  height: 0.7em;
   background: var(--accent);
   border-radius: 2px;
   box-shadow: 0 0 10px var(--accent-glow);
@@ -618,13 +621,14 @@ body {
 /* ---------------- keyboard visual ---------------- */
 
 .keyboard-visual {
+  --kb-key: clamp(2.35rem, 3.1vw, 3.1rem);
   width: 100%;
-  max-width: 720px;
+  max-width: 1000px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.4rem;
-  margin-top: 1.75rem;
+  margin-top: clamp(1.25rem, 4vh, 2.25rem);
 }
 
 .kb-row {
@@ -643,8 +647,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 2.35rem;
-  height: 2.35rem;
+  min-width: var(--kb-key);
+  height: var(--kb-key);
   padding: 0 0.3rem;
   background: var(--surface);
   border: 1px solid var(--line-soft);

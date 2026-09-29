@@ -358,45 +358,94 @@
   const keyboardVisualEl = document.getElementById('keyboardVisual');
  
   // ---------------------------------------------------
-  // favicon — a lowercase "a" drawn in the currently
-  // selected font, in the current theme's accent color.
-  // Redrawn on theme change, font change, and at load.
+  // font loading — a font from Google Fonts is only
+  // downloaded the first time it's actually used, so
+  // switching to it straight away shows the fallback
+  // font for a split second. Instead, the new font is
+  // loaded first and only applied once it's ready.
   // ---------------------------------------------------
-  const faviconEl = document.getElementById('favicon');
+  const FONT_TEST_TEXT = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+  function loadFontFamily(family) {
+    if (!document.fonts || typeof document.fonts.load !== 'function') {
+      return Promise.resolve();
+    }
+    // 400 is used by the passage, 700 by the logo, stats and favicon
+    return Promise.all([
+      document.fonts.load(`400 1em ${family}`, FONT_TEST_TEXT),
+      document.fonts.load(`700 1em ${family}`, FONT_TEST_TEXT),
+    ]).catch(() => {});
+  }
+
+  // ---------------------------------------------------
+  // favicon — a capital "M" drawn in the currently
+  // selected font, in the current theme's accent color.
+  // Redrawn whenever the theme or font changes, and at load.
+  // ---------------------------------------------------
+  const FAVICON_SIZE = 64;
+
+  // resolves the accent variable to a plain rgb() value, which every
+  // browser's canvas understands (unlike newer hsl() syntax in some)
+  function resolveAccentColor() {
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--accent)';
+    probe.style.display = 'none';
+    document.body.appendChild(probe);
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color || '#ffffff';
+  }
+
+  function setFavicon(dataUrl) {
+    // replace every existing icon link with a fresh one; some browsers
+    // won't pick up a changed href on an existing <link> reliably
+    document.querySelectorAll('link[rel~="icon"]').forEach((el) => el.remove());
+    const link = document.createElement('link');
+    link.id = 'favicon';
+    link.rel = 'icon';
+    link.type = 'image/png';
+    link.href = dataUrl;
+    document.head.appendChild(link);
+  }
 
   function updateFavicon() {
-    if (!faviconEl) return;
-
-    const size = 64;
+    const size = FAVICON_SIZE;
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     ctx.clearRect(0, 0, size, size);
 
-    const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim();
-    const fontFamily =
-      (fontSelect && fontSelect.value) ||
-      getComputedStyle(document.documentElement).getPropertyValue('--font-mono').trim();
+    const fontFamily = fontSelect.value;
+    const letter = 'M';
 
-    ctx.fillStyle = accent || '#ffffff';
-    ctx.font = `700 ${Math.round(size * 0.72)}px ${fontFamily}`;
+    ctx.fillStyle = resolveAccentColor();
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('a', size / 2, size / 2 + size * 0.05);
+    ctx.textBaseline = 'alphabetic';
 
-    const dataUrl = canvas.toDataURL('image/png');
+    // measure at a reference size, then scale so the letter fills the
+    // icon without touching the edges, whatever the font's proportions
+    ctx.font = `700 100px ${fontFamily}`;
+    let m = ctx.measureText(letter);
+    const refW = (m.actualBoundingBoxLeft || 0) + (m.actualBoundingBoxRight || m.width);
+    const refH = (m.actualBoundingBoxAscent || 70) + (m.actualBoundingBoxDescent || 0);
+    const scale = Math.min((size * 0.9) / refW, (size * 0.8) / refH);
+    const fontPx = 100 * scale;
 
-    // some browsers won't pick up a changed href on an existing <link>
-    // reliably, so swap in a fresh link element each time to force it
-    const newFavicon = faviconEl.cloneNode(true);
-    newFavicon.href = dataUrl;
-    faviconEl.replaceWith(newFavicon);
-    faviconRef = newFavicon;
+    ctx.font = `700 ${fontPx}px ${fontFamily}`;
+    m = ctx.measureText(letter);
+    const left = m.actualBoundingBoxLeft || 0;
+    const right = m.actualBoundingBoxRight || m.width;
+    const ascent = m.actualBoundingBoxAscent || fontPx * 0.7;
+    const descent = m.actualBoundingBoxDescent || 0;
+
+    const x = size / 2 - (right - left) / 2;
+    const y = size / 2 + (ascent - descent) / 2;
+    ctx.fillText(letter, x, y);
+
+    setFavicon(canvas.toDataURL('image/png'));
   }
-
-  // mutable reference so repeated calls keep working after the node swap above
-  let faviconRef = faviconEl;
  
   // ---------------------------------------------------
   // state
@@ -1025,14 +1074,26 @@
     keystrokeEffects = effectsToggle.checked;
   });
  
-  fontSelect.addEventListener('change', () => {
-    document.documentElement.style.setProperty('--font-mono', fontSelect.value);
+  // each change gets an id so that if the user switches fonts quickly,
+  // only the most recent choice is ever applied
+  let fontChangeId = 0;
+
+  fontSelect.addEventListener('change', async () => {
+    const changeId = ++fontChangeId;
+    const family = fontSelect.value;
+
+    // wait for the font to be ready BEFORE applying it, so the page
+    // never shows a fallback font in the meantime
+    await loadFontFamily(family);
+    if (changeId !== fontChangeId) return;
+
+    document.documentElement.style.setProperty('--font-mono', family);
+
     // re-measure since a new font can change line height / wrapping
-    requestAnimationFrame(() => {
-      measureLineHeight();
-      lineRanges = computeLineRanges();
-      positionCaret(hiddenInput.value.length, { instant: true });
-    });
+    measureLineHeight();
+    lineRanges = computeLineRanges();
+    positionCaret(hiddenInput.value.length, { instant: true });
+
     updateFavicon();
   });
  
@@ -1177,10 +1238,14 @@
   // ---------------------------------------------------
   buildKeyboardVisual();
   resetState();
- 
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(updateFavicon);
-  } else {
+
+  // draw the favicon once the starting font is actually loaded, so the
+  // "M" is never rendered in a fallback font
+  loadFontFamily(fontSelect.value).then(() => {
     updateFavicon();
-  }
+    // re-measure in case the font arrived after the first layout pass
+    measureLineHeight();
+    lineRanges = computeLineRanges();
+    positionCaret(hiddenInput.value.length, { instant: true });
+  });
 })();
